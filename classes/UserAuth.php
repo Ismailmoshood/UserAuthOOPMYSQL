@@ -4,8 +4,8 @@ session_start();
 
 class UserAuth extends Dbh
 {
+
     private $db;
-    
 
     public function __construct()
     {
@@ -15,7 +15,7 @@ class UserAuth extends Dbh
     public function register($fullname, $email, $password, $confirmPassword, $country, $gender)
     {
         $conn = $this->db->connect();
-        if ($this->confirmPasswordMatch($password, $confirmPassword)) {
+        if ($this->validatePassword($password, $confirmPassword)) {
             $sql = "INSERT INTO Students (`full_names`, `email`, `password`, `country`, `gender`) VALUES ('$fullname','$email', '$password', '$country', '$gender')";
             if ($conn->query($sql)) {
                 echo "Ok";
@@ -32,9 +32,9 @@ class UserAuth extends Dbh
         $result = $conn->query($sql);
         if ($result->num_rows > 0) {
             $_SESSION['email'] = $email;
-            header("Location: ../dashboard.php");
+            header("Location: ./dashboard.php");
         } else {
-            header("Location: forms/login.php");
+            header("Location: ./forms/login.php");
         }
     }
 
@@ -67,8 +67,7 @@ class UserAuth extends Dbh
         </thead></tr>";
         if ($result->mysqlinum_rows > 0) {
             // while ($data = mysqli_fetch_assoc($result)) 
-            while ($data = $result->fetch(PDO::FETCH_ASSOC)) ;
-            {
+            while ($data = $result->fetch_assoc()); {
                 //show data
                 echo "<tr style='height: 20px'>" .
                     "<td style='width: 50px; background: gray'>" . $data['id'] . "</td>
@@ -88,10 +87,10 @@ class UserAuth extends Dbh
         }
     }
 
-    public function deleteUser($id)
+    public function deleteUser($email)
     {
         $conn = $this->db->connect();
-        $sql = "DELETE FROM Students WHERE id = '$id'";
+        $sql = "DELETE FROM Students WHERE email = '$email'";
         if ($conn->query($sql) === TRUE) {
             header("refresh:0.5; url=action.php?all");
         } else {
@@ -99,16 +98,19 @@ class UserAuth extends Dbh
         }
     }
 
-    public function updateUser($username, $password)
+    public function updateUser($username, $password, $email)
     {
         $conn = $this->db->connect();
-        $sql = "UPDATE users SET password = '$password' WHERE username = '$username'";
-        if ($conn->query($sql) === TRUE) {
-            header("Location: ../dashboard.php?update=success");
-        } else {
-            header("Location: forms/resetpassword.php?error=1");
+        if ($this->checkemailexist($email)) {
+            $sql = "UPDATE users SET password = '$password' WHERE username = '$username'";
+            if ($conn->query($sql) === TRUE) {
+                header("Location: ../dashboard.php?update=success");
+            } else {
+                header("Location: forms/resetpassword.php?error=1");
+            }
         }
     }
+
 
     public function getUserByUsername($username)
     {
@@ -125,11 +127,24 @@ class UserAuth extends Dbh
     public function logout($username)
     {
         session_start();
+        session_unset();
         session_destroy();
-        header('Location: index.php');
+
+        header("Location: ./index.php");
+    }
+    public function checkemailexist($email)
+    {
+        $conn = $this->db->connect();
+        $sql = "SELECT * FROM users WHERE email = '$email'";
+        $result = $conn->query($sql);
+        if ($result->num_rows > 0) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    public function confirmPasswordMatch($password, $confirmPassword)
+    public function validatePassword($password, $confirmPassword)
     {
         if ($password === $confirmPassword) {
             return true;
