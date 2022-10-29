@@ -31,7 +31,7 @@ class UserAuth extends Dbh
         $sql = "SELECT * FROM Students WHERE email='$email' AND `password`='$password'";
         $result = $conn->query($sql);
         if ($result->num_rows > 0) {
-            $_SESSION['email'] = $email;
+            $_SESSION['username'] = $email;
             header("Location: ./dashboard.php");
         } else {
             header("Location: ./forms/login.php");
@@ -41,7 +41,7 @@ class UserAuth extends Dbh
     public function getUser($username)
     {
         $conn = $this->db->connect();
-        $sql = "SELECT * FROM users WHERE username = '$username'";
+        $sql = "SELECT * FROM students WHERE username = '$username'";
         $result = $conn->query($sql);
         if ($result->num_rows > 0) {
             return $result->fetch_assoc();
@@ -65,9 +65,9 @@ class UserAuth extends Dbh
         <tr style='height: 40px'>
             <thead class='thead-dark'> <th>ID</th><th>Full Names</th> <th>Email</th> <th>Gender</th> <th>Country</th> <th>Action</th>
         </thead></tr>";
-        if ($result->mysqlinum_rows > 0) {
-            // while ($data = mysqli_fetch_assoc($result)) 
-            while ($data = $result->fetch_assoc()); {
+        if ($result->num_rows > 0) {
+            while ($data = mysqli_fetch_assoc($result)){
+
                 //show data
                 echo "<tr style='height: 20px'>" .
                     "<td style='width: 50px; background: gray'>" . $data['id'] . "</td>
@@ -87,24 +87,24 @@ class UserAuth extends Dbh
         }
     }
 
-    public function deleteUser($email)
+    public function deleteUser($id)
     {
         $conn = $this->db->connect();
-        $sql = "DELETE FROM Students WHERE email = '$email'";
+        $sql = "DELETE FROM Students WHERE id = '$id'";
         if ($conn->query($sql) === TRUE) {
-            header("refresh:0.5; url=action.php?all");
+            header("refresh:0.5; url=action.php?all=?message=studentdeleted");
         } else {
             header("refresh:0.5; url=action.php?all=?message=Error");
         }
     }
 
-    public function updateUser($username, $password, $email)
+    public function updateUser($email, $password)
     {
         $conn = $this->db->connect();
         if ($this->checkemailexist($email)) {
-            $sql = "UPDATE users SET password = '$password' WHERE username = '$username'";
+            $sql = "UPDATE students SET password = '$password' WHERE email = '$email'";
             if ($conn->query($sql) === TRUE) {
-                header("Location: ../dashboard.php?update=success");
+                header("Location: ./dashboard.php?update=success");
             } else {
                 header("Location: forms/resetpassword.php?error=1");
             }
@@ -115,7 +115,7 @@ class UserAuth extends Dbh
     public function getUserByUsername($username)
     {
         $conn = $this->db->connect();
-        $sql = "SELECT * FROM users WHERE username = '$username'";
+        $sql = "SELECT * FROM student WHERE username = '$username'";
         $result = $conn->query($sql);
         if ($result->num_rows > 0) {
             return $result->fetch_assoc();
@@ -124,18 +124,21 @@ class UserAuth extends Dbh
         }
     }
 
-    public function logout($username)
+    public function logout($email)
     {
+        if(isset($_SESSION [$email]))
+        {
         session_start();
         session_unset();
         session_destroy();
-
-        header("Location: ./index.php");
+        header("Location: ./forms/login.php");
+        }
     }
+    
     public function checkemailexist($email)
     {
         $conn = $this->db->connect();
-        $sql = "SELECT * FROM users WHERE email = '$email'";
+        $sql = "SELECT * FROM students WHERE email = '$email'";
         $result = $conn->query($sql);
         if ($result->num_rows > 0) {
             return true;
